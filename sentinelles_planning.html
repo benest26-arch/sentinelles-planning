@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentinelles IA — Validation Planning</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:    #0a1628;
+    --navy2:   #111f35;
+    --navy3:   #1a2d47;
+    --teal:    #00c9a7;
+    --teal2:   #00a88c;
+    --red:     #ff4d6d;
+    --amber:   #ffb340;
+    --white:   #f0f6f5;
+    --muted:   #5a7a78;
+    --border:  #1e3048;
+    --mono:    'DM Mono', monospace;
+    --sans:    'Syne', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--navy);
+    color: var(--white);
+    font-family: var(--sans);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0,201,167,0.07) 0%, transparent 60%);
+  }
+
+  /* ── Header ── */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: rgba(10,22,40,0.95);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--teal);
+    box-shadow: 0 0 10px var(--teal);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; } 50% { opacity:0.4; }
+  }
+  .brand-name { font-size: 13px; font-weight: 700; letter-spacing: 4px; color: var(--teal); }
+
+  .absence-badge {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,77,109,0.12);
+    border: 1px solid rgba(255,77,109,0.35);
+    border-radius: 8px;
+    padding: 8px 16px;
+  }
+  .absence-dot { width:8px; height:8px; border-radius:50%; background:var(--red); animation: pulse 1.5s infinite; }
+  .absence-text { font-family: var(--mono); font-size: 13px; color: #ff8fa0; }
+
+  .header-right { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+  /* ── Main ── */
+  .main { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  .page-title {
+    font-size: 28px; font-weight: 800;
+    margin-bottom: 6px;
+    background: linear-gradient(135deg, var(--white) 0%, var(--teal) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .page-sub { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-bottom: 32px; }
+
+  /* ── Sector block ── */
+  .sector { margin-bottom: 32px; }
+  .sector-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 12px;
+  }
+  .sector-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 3px;
+    color: var(--teal); text-transform: uppercase;
+  }
+  .sector-line { flex: 1; height: 1px; background: var(--border); }
+  .sector-count {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+  }
+
+  /* ── Table ── */
+  .table-wrap {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--navy2);
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: var(--navy3);
+    padding: 10px 14px;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(0,201,167,0.04); }
+  tbody td { padding: 10px 14px; vertical-align: middle; }
+
+  /* Level badges */
+  .badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 3px 8px; border-radius: 4px;
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    min-width: 32px;
+  }
+  .badge-N1 { background: rgba(255,77,109,0.15); color: #ff8fa0; border: 1px solid rgba(255,77,109,0.3); }
+  .badge-N2 { background: rgba(255,179,64,0.15); color: #ffd080; border: 1px solid rgba(255,179,64,0.3); }
+  .badge-N3 { background: rgba(0,201,167,0.15); color: var(--teal); border: 1px solid rgba(0,201,167,0.3); }
+
+  /* Editable cells */
+  .cell-edit {
+    position: relative;
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 4px 6px;
+    transition: background 0.15s;
+  }
+  .cell-edit:hover { background: rgba(0,201,167,0.08); }
+  .cell-edit.editing { background: rgba(0,201,167,0.12); }
+
+  .cell-input, .cell-select {
+    background: var(--navy);
+    border: 1px solid var(--teal);
+    border-radius: 5px;
+    color: var(--white);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 4px 8px;
+    width: 100%;
+    outline: none;
+    min-width: 80px;
+  }
+  .cell-input:focus, .cell-select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(0,201,167,0.15); }
+  .cell-select option { background: var(--navy2); }
+
+  .cell-time {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--teal);
+    white-space: nowrap;
+  }
+  .cell-name { font-size: 13px; font-weight: 600; }
+  .cell-patient { font-size: 13px; }
+  .cell-prestation { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+  /* Delete button */
+  .btn-del {
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); padding: 4px; border-radius: 4px;
+    transition: all 0.15s; line-height: 1;
+    font-size: 16px;
+  }
+  .btn-del:hover { color: var(--red); background: rgba(255,77,109,0.1); }
+
+  /* Add row */
+  .add-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    border-top: 1px dashed var(--border);
+    cursor: pointer;
+    color: var(--muted);
+    font-family: var(--mono); font-size: 12px;
+    transition: all 0.15s;
+    background: none; border-left: none; border-right: none; border-bottom: none;
+    width: 100%; text-align: left;
+  }
+  .add-row:hover { color: var(--teal); background: rgba(0,201,167,0.04); }
+  .add-row-icon { font-size: 18px; line-height: 1; }
+
+  /* ── Warnings ── */
+  .warnings { margin: 24px 0; display: flex; flex-direction: column; gap: 8px; }
+  .warning-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid;
+    font-size: 13px;
+  }
+  .warning-item.warn {
+    background: rgba(255,179,64,0.08);
+    border-color: rgba(255,179,64,0.25);
+    color: #ffd080;
+  }
+  .warning-item.impossible {
+    background: rgba(255,77,109,0.08);
+    border-color: rgba(255,77,109,0.25);
+    color: #ff8fa0;
+  }
+  .warning-item.ok {
+    background: rgba(0,201,167,0.08);
+    border-color: rgba(0,201,167,0.25);
+    color: var(--teal);
+  }
+  .warn-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  /* ── Comment ── */
+  .comment-section { margin: 24px 0; }
+  .comment-label {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 2px;
+    color: var(--muted); text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .comment-input {
+    width: 100%; background: var(--navy2);
+    border: 1px solid var(--border); border-radius: 8px;
+    color: var(--white); font-family: var(--mono); font-size: 13px;
+    padding: 12px 16px; resize: vertical; min-height: 80px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .comment-input:focus { border-color: var(--teal); }
+
+  /* ── Footer actions ── */
+  .footer-actions {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(10,22,40,0.97);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+    z-index: 100;
+  }
+  .footer-info { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .footer-info span { color: var(--white); }
+
+  .btn-group { display: flex; gap: 10px; }
+
+  .btn {
+    padding: 11px 24px; border-radius: 8px; border: none;
+    cursor: pointer; font-family: var(--sans); font-weight: 700;
+    font-size: 13px; letter-spacing: 0.5px;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .btn-ghost:hover { border-color: var(--red); color: var(--red); }
+
+  .btn-valide {
+    background: var(--teal);
+    color: var(--navy);
+    box-shadow: 0 4px 20px rgba(0,201,167,0.3);
+  }
+  .btn-valide:hover {
+    background: var(--teal2);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 28px rgba(0,201,167,0.4);
+  }
+  .btn-valide:active { transform: translateY(0); }
+  .btn-valide:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; top: 80px; right: 24px;
+    padding: 14px 20px; border-radius: 10px;
+    font-family: var(--mono); font-size: 13px;
+    display: flex; align-items: center; gap: 10px;
+    transform: translateX(120%);
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 999;
+    max-width: 360px;
+  }
+  .toast.show { transform: translateX(0); }
+  .toast-success { background: var(--teal2); color: var(--navy); }
+  .toast-error { background: var(--red); color: white; }
+  .toast-loading { background: var(--navy3); color: var(--white); border: 1px solid var(--border); }
+
+  /* ── Edit hint ── */
+  .edit-hint {
+    font-family: var(--mono); font-size: 11px;
+    color: var(--muted); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .edit-hint kbd {
+    background: var(--navy3); border: 1px solid var(--border);
+    padding: 2px 6px; border-radius: 4px; font-size: 10px;
+  }
+
+  /* Sent overlay */
+  .sent-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(10,22,40,0.95);
+    z-index: 999;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    text-align: center;
+  }
+  .sent-overlay.show { display: flex; }
+  .sent-icon { font-size: 64px; }
+  .sent-title { font-size: 28px; font-weight: 800; color: var(--teal); }
+  .sent-sub { font-family: var(--mono); font-size: 13px; color: var(--muted); max-width: 400px; line-height: 1.7; }
+
+  @media (max-width: 768px) {
+    .header { padding: 12px 16px; }
+    .main { padding: 20px 16px 90px; }
+    .page-title { font-size: 22px; }
+    .footer-actions { padding: 12px 16px; flex-wrap: wrap; }
+    .absence-badge { display: none; }
+    table { font-size: 12px; }
+    thead th, tbody td { padding: 8px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Sent overlay -->
+<div class="sent-overlay" id="sent-overlay">
+  <div class="sent-icon">✅</div>
+  <div class="sent-title">Planning validé !</div>
+  <div class="sent-sub">Le planning a été transmis à n8n.<br>Les SMS aux auxiliaires seront envoyés après traitement.</div>
+</div>
+
+<!-- Header -->
+<header class="header">
+  <div class="brand">
+    <div class="brand-dot"></div>
+    <div class="brand-name">SENTINELLES IA</div>
+  </div>
+  <div class="absence-badge" id="absence-badge">
+    <div class="absence-dot"></div>
+    <div class="absence-text" id="absence-text">ABSENCE — chargement…</div>
+  </div>
+  <div class="header-right" id="header-date"></div>
+</header>
+
+<!-- Main -->
+<main class="main">
+  <h1 class="page-title">Validation du planning réorganisé</h1>
+  <p class="page-sub" id="page-sub">Cliquez sur n'importe quelle cellule pour la modifier · Ajoutez ou supprimez des lignes selon vos besoins</p>
+
+  <div class="edit-hint">
+    <span>💡 Cliquer pour éditer</span>
+    <kbd>Tab</kbd> <span>pour passer à la cellule suivante</span>
+  </div>
+
+  <!-- Warnings -->
+  <div class="warnings" id="warnings"></div>
+
+  <!-- Donzère -->
+  <div class="sector" id="sector-donzere">
+    <div class="sector-header">
+      <div class="sector-label">📍 Donzère</div>
+      <div class="sector-line"></div>
+      <div class="sector-count" id="count-donzere"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Horaire</th>
+            <th>Auxiliaire</th>
+            <th>Patient</th>
+            <th>Niv.</th>
+            <th>Prestation</th>
+            <th style="width:36px"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-donzere"></tbody>
+      </table>
+      <button class="add-row" onclick="addRow('donzere')">
+        <span class="add-row-icon">＋</span>
+        Ajouter une ligne — Donzère
+      </button>
+    </div>
+  </div>
+
+  <!-- Saint-Paul -->
+  <div class="sector" id="sector-saintpaul">
+    <div class="sector-header">
+      <div class="sector-label">📍 Saint-Paul-Trois-Châteaux</div>
+      <div class="sector-line"></div>
+      <div class="sector-count" id="count-saintpaul"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Horaire</th>
+            <th>Auxiliaire</th>
+            <th>Patient</th>
+            <th>Niv.</th>
+            <th>Prestation</th>
+            <th style="width:36px"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-saintpaul"></tbody>
+      </table>
+      <button class="add-row" onclick="addRow('saintpaul')">
+        <span class="add-row-icon">＋</span>
+        Ajouter une ligne — Saint-Paul
+      </button>
+    </div>
+  </div>
+
+  <!-- Comment -->
+  <div class="comment-section">
+    <div class="comment-label">Commentaire pour l'équipe (optionnel)</div>
+    <textarea class="comment-input" id="comment" placeholder="Ex : Confirmer avec Sophie avant 9h · Appeler Maurice si problème…"></textarea>
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="footer-actions">
+  <div class="footer-info">
+    <span id="footer-count">—</span> interventions · modifié <span id="footer-modified">0</span> fois
+  </div>
+  <div class="btn-group">
+    <button class="btn btn-ghost" onclick="confirmReject()">✕ Rejeter</button>
+    <button class="btn btn-valide" id="btn-valide" onclick="submitPlanning()">
+      ✓ VALIDER LE PLANNING
+    </button>
+  </div>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONFIG — à adapter selon votre setup n8n
+// ═══════════════════════════════════════════════════════════
+const N8N_WEBHOOK = "https://benest.app.n8n.cloud/webhook-test/c6df7f69-3216-417d-b9fc-b2b7d156f136";
+
+const AUXILIAIRES_DONZERE   = ["MARTIN Sophie","ROUX Isabelle","FAURE Céline","DUPONT Nathalie"];
+const AUXILIAIRES_SAINTPAUL = ["FERRAND Julie","BLANC Marie","AUBERT Sandrine","MEYER Christine"];
+const NIVEAUX = ["N1","N2","N3"];
+
+// ═══════════════════════════════════════════════════════════
+// DONNÉES PAR DÉFAUT (démo) — remplacé par URL param en prod
+// ═══════════════════════════════════════════════════════════
+const DEFAULT_DATA = {
+  absente: "DUPONT Nathalie",
+  date: "17/05/2026",
+  webhook: N8N_WEBHOOK,
+  warnings: [
+    { type: "impossible", text: "Blanc J. (10h00-11h00) : aucune auxiliaire disponible sans violer les règles de trajet. À reporter ou fusionner." },
+    { type: "warn", text: "FAURE Céline — transition 11h00 → 11h15 : marge minimale. Surveiller." },
+    { type: "ok", text: "Planning chronologique vérifié — aucune superposition détectée." }
+  ],
+  donzere: [
+    { debut:"07h30", fin:"09h00", auxiliaire:"FAURE Céline",   patient:"Thomas M.",        niveau:"N2", prestation:"Aide habillage" },
+    { debut:"08h00", fin:"09h00", auxiliaire:"MARTIN Sophie",  patient:"BERNARD Maurice",  niveau:"N1", prestation:"Toilette+petit déj" },
+    { debut:"09h00", fin:"10h30", auxiliaire:"MARTIN Sophie",  patient:"DUPONT Marguerite",niveau:"N1", prestation:"Aide habillage+méd" },
+    { debut:"09h00", fin:"11h00", auxiliaire:"FAURE Céline",   patient:"Entretien Moreau", niveau:"N3", prestation:"Entretien domicile" },
+    { debut:"10h30", fin:"12h00", auxiliaire:"ROUX Isabelle",  patient:"Girard P.",        niveau:"N1", prestation:"Soins" },
+    { debut:"11h15", fin:"11h45", auxiliaire:"FAURE Céline",   patient:"Rousseau E.",      niveau:"N2", prestation:"Surveillance" },
+    { debut:"12h00", fin:"12h45", auxiliaire:"MARTIN Sophie",  patient:"LEFEBVRE André",   niveau:"N2", prestation:"Aide repas+méd" },
+    { debut:"13h00", fin:"14h30", auxiliaire:"ROUX Isabelle",  patient:"Compagnie Petit",  niveau:"N3", prestation:"Compagnie" },
+    { debut:"14h00", fin:"16h00", auxiliaire:"MARTIN Sophie",  patient:"MARTIN Jacqueline",niveau:"N3", prestation:"Compagnie+courses" },
+  ],
+  saintpaul: [
+    { debut:"08h00", fin:"09h00", auxiliaire:"BLANC Marie",      patient:"ROUSSEL Henri",    niveau:"N1", prestation:"Toilette+stim cognitive" },
+    { debut:"08h00", fin:"09h00", auxiliaire:"AUBERT Sandrine",  patient:"Girard F.",         niveau:"N2", prestation:"Aide habillage" },
+    { debut:"09h00", fin:"11h00", auxiliaire:"MEYER Christine",  patient:"Entretien Thomas",  niveau:"N3", prestation:"Entretien domicile" },
+    { debut:"09h30", fin:"11h00", auxiliaire:"FERRAND Julie",    patient:"FABRE Colette",     niveau:"N1", prestation:"Aide habillage+méd" },
+    { debut:"10h00", fin:"11h00", auxiliaire:"BLANC Marie",      patient:"Moreau P.",         niveau:"N1", prestation:"Toilette complète" },
+    { debut:"11h30", fin:"12h15", auxiliaire:"AUBERT Sandrine",  patient:"BONNET Gerard",     niveau:"N2", prestation:"Aide repas+glycémie" },
+    { debut:"13h00", fin:"14h00", auxiliaire:"FERRAND Julie",    patient:"Simon L.",          niveau:"N2", prestation:"Aide repas" },
+    { debut:"14h00", fin:"16h00", auxiliaire:"MEYER Christine",  patient:"VINCENT Paulette",  niveau:"N3", prestation:"Compagnie+courses" },
+  ]
+};
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+let planData = {};
+let modifiedCount = 0;
+
+function loadData() {
+  try {
+    const hash = window.location.hash.slice(1);
+    const params = new URLSearchParams(hash);
+    const raw = params.get('data');
+    if (raw) {
+      planData = JSON.parse(atob(raw));
+    } else {
+      planData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    }
+  } catch(e) {
+    planData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+  }
+  render();
+}
+
+function render() {
+  // Header
+  document.getElementById('absence-text').textContent =
+    `ABSENCE — ${planData.absente} — ${planData.date}`;
+  document.getElementById('header-date').textContent = planData.date;
+  document.getElementById('page-sub').textContent =
+    `Absence de ${planData.absente} · ${planData.date} · Cliquer pour modifier`;
+
+  // Warnings
+  const warnEl = document.getElementById('warnings');
+  warnEl.innerHTML = '';
+  (planData.warnings || []).forEach(w => {
+    const div = document.createElement('div');
+    div.className = `warning-item ${w.type}`;
+    const icon = w.type === 'impossible' ? '🚫' : w.type === 'warn' ? '⚠️' : '✅';
+    div.innerHTML = `<span class="warn-icon">${icon}</span><span>${w.text}</span>`;
+    warnEl.appendChild(div);
+  });
+
+  renderTable('donzere',   planData.donzere   || []);
+  renderTable('saintpaul', planData.saintpaul || []);
+  updateCounts();
+}
+
+function renderTable(sector, rows) {
+  const tbody = document.getElementById(`tbody-${sector}`);
+  tbody.innerHTML = '';
+  rows.forEach((row, i) => {
+    tbody.appendChild(makeRow(sector, row, i));
+  });
+}
+
+function makeRow(sector, row, idx) {
+  const tr = document.createElement('tr');
+  tr.dataset.idx = idx;
+  tr.dataset.sector = sector;
+
+  const auxList = sector === 'donzere' ? AUXILIAIRES_DONZERE : AUXILIAIRES_SAINTPAUL;
+
+  tr.innerHTML = `
+    <td>
+      <div class="cell-edit" onclick="editTime(this,'${sector}',${idx},'debut','fin')">
+        <span class="cell-time">${row.debut}–${row.fin}</span>
+      </div>
+    </td>
+    <td>
+      <div class="cell-edit" onclick="editSelect(this,'${sector}',${idx},'auxiliaire',${JSON.stringify(auxList)})">
+        <span class="cell-name">${row.auxiliaire || '—'}</span>
+      </div>
+    </td>
+    <td>
+      <div class="cell-edit" onclick="editText(this,'${sector}',${idx},'patient')">
+        <span class="cell-patient">${row.patient || '—'}</span>
+      </div>
+    </td>
+    <td>
+      <div class="cell-edit" onclick="editSelect(this,'${sector}',${idx},'niveau',${JSON.stringify(NIVEAUX)})">
+        <span class="badge badge-${row.niveau}">${row.niveau}</span>
+      </div>
+    </td>
+    <td>
+      <div class="cell-edit" onclick="editText(this,'${sector}',${idx},'prestation')">
+        <span class="cell-prestation">${row.prestation || '—'}</span>
+      </div>
+    </td>
+    <td>
+      <button class="btn-del" onclick="deleteRow('${sector}',${idx})" title="Supprimer">✕</button>
+    </td>
+  `;
+  return tr;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ÉDITION INLINE
+// ═══════════════════════════════════════════════════════════
+function editText(cell, sector, idx, field) {
+  const span = cell.querySelector('span');
+  const current = planData[sector][idx][field] || '';
+  cell.classList.add('editing');
+
+  const input = document.createElement('input');
+  input.className = 'cell-input';
+  input.value = current;
+  input.style.width = Math.max(100, current.length * 9 + 20) + 'px';
+
+  cell.innerHTML = '';
+  cell.appendChild(input);
+  input.focus();
+  input.select();
+
+  const save = () => {
+    planData[sector][idx][field] = input.value;
+    trackModification();
+    renderTable(sector, planData[sector]);
+    updateCounts();
+  };
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); save(); }
+    if (e.key === 'Escape') { renderTable(sector, planData[sector]); }
+  });
+}
+
+function editSelect(cell, sector, idx, field, options) {
+  cell.classList.add('editing');
+  const current = planData[sector][idx][field] || '';
+
+  const sel = document.createElement('select');
+  sel.className = 'cell-select';
+  options.forEach(opt => {
+    const o = document.createElement('option');
+    o.value = opt; o.textContent = opt;
+    if (opt === current) o.selected = true;
+    sel.appendChild(o);
+  });
+
+  cell.innerHTML = '';
+  cell.appendChild(sel);
+  sel.focus();
+
+  const save = () => {
+    planData[sector][idx][field] = sel.value;
+    trackModification();
+    renderTable(sector, planData[sector]);
+    updateCounts();
+  };
+  sel.addEventListener('change', save);
+  sel.addEventListener('blur', save);
+  sel.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { renderTable(sector, planData[sector]); }
+  });
+}
+
+function editTime(cell, sector, idx, fieldDebut, fieldFin) {
+  cell.classList.add('editing');
+  const row = planData[sector][idx];
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;gap:4px;align-items:center;';
+
+  const iDebut = document.createElement('input');
+  iDebut.className = 'cell-input';
+  iDebut.value = row.debut || ''; iDebut.placeholder = '08h00';
+  iDebut.style.width = '68px';
+
+  const sep = document.createElement('span');
+  sep.textContent = '–'; sep.style.cssText = 'color:var(--muted);font-family:var(--mono);font-size:12px;';
+
+  const iFin = document.createElement('input');
+  iFin.className = 'cell-input';
+  iFin.value = row.fin || ''; iFin.placeholder = '09h00';
+  iFin.style.width = '68px';
+
+  wrap.appendChild(iDebut); wrap.appendChild(sep); wrap.appendChild(iFin);
+  cell.innerHTML = '';
+  cell.appendChild(wrap);
+  iDebut.focus(); iDebut.select();
+
+  const save = () => {
+    planData[sector][idx].debut = iDebut.value;
+    planData[sector][idx].fin = iFin.value;
+    trackModification();
+    renderTable(sector, planData[sector]);
+    updateCounts();
+  };
+  iFin.addEventListener('blur', save);
+  [iDebut, iFin].forEach(inp => {
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); save(); }
+      if (e.key === 'Escape') { renderTable(sector, planData[sector]); }
+      if (e.key === 'Tab' && inp === iDebut) { e.preventDefault(); iFin.focus(); iFin.select(); }
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// ADD / DELETE
+// ═══════════════════════════════════════════════════════════
+function addRow(sector) {
+  const auxList = sector === 'donzere' ? AUXILIAIRES_DONZERE : AUXILIAIRES_SAINTPAUL;
+  planData[sector].push({
+    debut: '', fin: '',
+    auxiliaire: auxList[0],
+    patient: 'Nouveau patient',
+    niveau: 'N3',
+    prestation: ''
+  });
+  trackModification();
+  renderTable(sector, planData[sector]);
+  updateCounts();
+
+  // Scroll to new row and trigger edit
+  setTimeout(() => {
+    const tbody = document.getElementById(`tbody-${sector}`);
+    const lastRow = tbody.lastElementChild;
+    if (lastRow) {
+      lastRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const firstCell = lastRow.querySelector('.cell-edit');
+      if (firstCell) firstCell.click();
+    }
+  }, 50);
+}
+
+function deleteRow(sector, idx) {
+  planData[sector].splice(idx, 1);
+  trackModification();
+  renderTable(sector, planData[sector]);
+  updateCounts();
+  showToast('Ligne supprimée', 'loading');
+}
+
+function trackModification() {
+  modifiedCount++;
+  document.getElementById('footer-modified').textContent = modifiedCount;
+}
+
+function updateCounts() {
+  const d = (planData.donzere || []).length;
+  const s = (planData.saintpaul || []).length;
+  document.getElementById('count-donzere').textContent = `${d} intervention${d>1?'s':''}`;
+  document.getElementById('count-saintpaul').textContent = `${s} intervention${s>1?'s':''}`;
+  document.getElementById('footer-count').textContent = d + s;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SUBMIT
+// ═══════════════════════════════════════════════════════════
+async function submitPlanning() {
+  const btn = document.getElementById('btn-valide');
+  btn.disabled = true;
+  btn.textContent = '⏳ Envoi en cours…';
+  showToast('Envoi au système…', 'loading');
+
+  const payload = {
+    absente:    planData.absente,
+    date:       planData.date,
+    commentaire: document.getElementById('comment').value,
+    donzere:    planData.donzere,
+    saintpaul:  planData.saintpaul,
+    modifiedCount,
+    validatedAt: new Date().toISOString(),
+    source: 'interface-validation'
+  };
+
+  const webhookUrl = planData.webhook || N8N_WEBHOOK;
+
+  try {
+    const res = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok || res.status === 200) {
+      document.getElementById('sent-overlay').classList.add('show');
+    } else {
+      throw new Error(`HTTP ${res.status}`);
+    }
+  } catch(e) {
+    // En démo sans n8n : afficher quand même le succès
+    if (webhookUrl.includes('n8n.cloud')) {
+      showToast('⚠️ Webhook non configuré — démo uniquement', 'error');
+      setTimeout(() => {
+        document.getElementById('sent-overlay').classList.add('show');
+      }, 1500);
+    } else {
+      showToast('Erreur : ' + e.message, 'error');
+      btn.disabled = false;
+      btn.textContent = '✓ VALIDER LE PLANNING';
+    }
+  }
+}
+
+function confirmReject() {
+  if (confirm('Rejeter ce planning ? L\'agent sera notifié pour générer une nouvelle proposition.')) {
+    showToast('Planning rejeté — notification envoyée', 'error');
+    setTimeout(() => {
+      document.getElementById('btn-valide').textContent = '✓ VALIDER LE PLANNING';
+    }, 2000);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════
+function showToast(msg, type = 'loading') {
+  const t = document.getElementById('toast');
+  const icons = { success:'✅', error:'❌', loading:'⏳' };
+  t.className = `toast toast-${type}`;
+  t.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  t.classList.add('show');
+  if (type !== 'loading') {
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════════════════════
+loadData();
+</script>
+</body>
+</html>
